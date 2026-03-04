@@ -1,64 +1,91 @@
-from typing import Dict, List, Optional
+from typing import List, Optional
 from uuid import UUID
+import uuid
+from sqlalchemy.orm import Session
+from sqlalchemy import and_, or_, desc, asc
 
-from models.book import BookModel
+from models.book import Book
 from schemas.book import BookStatus
 
 
 class BookRepository:
-    def __init__(self):
-        self._books: List[Dict] = []
+    def __init__(self, db: Session):
+        self.db = db
     
-    async def add_book(self, book: BookModel) -> Dict:
-        book_dict = book.to_dict()
-        self._books.append(book_dict)
-        return book_dict
+    def add_book(self, book: Book) -> Book:
+        self.db.add(book)
+        self.db.commit()
+        self.db.refresh(book)
+        return book
     
-    async def get_all_books(self) -> List[Dict]:
-        return self._books.copy()
+    def get_all_books(
+        self,
+        limit: int = 100,
+        offset: int = 0,
+        status: Optional[BookStatus] = None,
+        author: Optional[str] = None,
+        sort_by: str = "title",
+        ascending: bool = True
+    ) -> List[Book]:
+        query = self.db.query(Book)
+        
+        # Apply filters
+        if status:
+            query = query.filter(Book.status == status)
+        
+        if author:
+            query = query.filter(
+                Book.author.ilike(f"%{author}%")
+            )
+        
+        # Apply sorting
+        if sort_by == "title":
+            order_column = Book.title
+        elif sort_by == "year":
+            order_column = Book.year
+        else:
+            order_column = Book.title
+        
+        if ascending:
+            query = query.order_by(asc(order_column))
+        else:
+            query = query.order_by(desc(order_column))
+        
+        # Apply pagination
+        return query.offset(offset).limit(limit).all()
     
-    async def get_book_by_id(self, book_id: str) -> Optional[Dict]:
-        for book in self._books:
-            if book["id"] == book_id:
-                return book
-        return None
+    def get_book_by_id(self, book_id: str) -> Optional[Book]:
+        try:
+            uuid.UUID(book_id)
+            return self.db.query(Book).filter(Book.id == book_id).first()
+        except ValueError:
+            return None
     
-    async def delete_book(self, book_id: str) -> bool:
-        for i, book in enumerate(self._books):
-            if book["id"] == book_id:
-                del self._books[i]
+    def delete_book(self, book_id: str) -> bool:
+        try:
+            uuid.UUID(book_id)
+            book = self.db.query(Book).filter(Book.id == book_id).first()
+            if book:
+                self.db.delete(book)
+                self.db.commit()
                 return True
-        return False
+            return False
+        except ValueError:
+            return False
     
-    async def filter_books(
+    def count_books(
         self,
         status: Optional[BookStatus] = None,
         author: Optional[str] = None
-    ) -> List[Dict]:
-        filtered_books = self._books.copy()
+    ) -> int:
+        query = self.db.query(Book)
         
         if status:
-            filtered_books = [
-                book for book in filtered_books 
-                if book["status"] == status.value
-            ]
+            query = query.filter(Book.status == status)
         
         if author:
-            filtered_books = [
-                book for book in filtered_books 
-                if author.lower() in book["author"].lower()
-            ]
+            query = query.filter(
+                Book.author.ilike(f"%{author}%")
+            )
         
-        return filtered_books
-    
-    async def sort_books(
-        self,
-        books: List[Dict],
-        sort_by: str = "title",
-        ascending: bool = True
-    ) -> List[Dict]:
-        if sort_by not in ["title", "year"]:
-            return books
-        
-        reverse = not ascending
-        return sorted(books, key=lambda x: x[sort_by], reverse=reverse)
+        return query.count()
