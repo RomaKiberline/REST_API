@@ -1,6 +1,6 @@
-# 📚 API Бібліотеки з Docker та PostgreSQL
+# 📚 API Бібліотеки з Cursor пагінацією та Docker
 
-> **Лабораторна робота 2** - REST API для управління книгами в бібліотеці з використанням PostgreSQL, SQLAlchemy та Docker контейнеризації.
+> **Лабораторна робота 3** - REST API для управління книгами в бібліотеці з використанням PostgreSQL, SQLAlchemy та Docker контейнеризації з Cursor пагінацією.
 
 [![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://docker.com)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://postgresql.org)
@@ -84,7 +84,7 @@ docker-compose up --build
 
 ## 📚 Ендпоінти API
 
-### 📖 Отримання книг з пагінацією
+### 📖 Отримання книг з Cursor пагінацією
 
 ```http
 GET /books/
@@ -95,10 +95,10 @@ GET /books/
 | Параметр | Тип | Опис | Приклад |
 |----------|-----|------|---------|
 | `limit` | integer | Кількість книг на сторінці (1-1000) | `10` |
-| `offset` | integer | Кількість книг для пропуску | `0` |
+| `cursor` | string | Cursor для пагінації (ID останньої книги з попередньої сторінки) | `550e8400-e29b-41d4-a716-446655440000` |
 | `status` | string | Фільтр за статусом (`available` або `borrowed`) | `available` |
 | `author` | string | Фільтр за автором (частковий збіг) | `Шевченко` |
-| `sort_by` | string | Сортування (`title` або `year`) | `year` |
+| `sort_by` | string | Сортування (`title`, `year` або `created_at`) | `created_at` |
 | `ascending` | boolean | Порядок сортування | `false` |
 
 #### 📤 Відповідь
@@ -116,11 +116,9 @@ GET /books/
       "created_at": "2026-01-01T12:00:00Z"
     }
   ],
-  "total": 150,
-  "limit": 10,
-  "offset": 0,
+  "next_cursor": "550e8400-e29b-41d4-a716-446655440001",
   "has_next": true,
-  "has_prev": false
+  "limit": 10
 }
 ```
 
@@ -128,7 +126,10 @@ GET /books/
 
 ```bash
 # Отримати перші 5 книг
-GET /books/?limit=5&offset=0
+GET /books/?limit=5
+
+# Отримати наступну сторінку використовуючи cursor
+GET /books/?limit=5&cursor=550e8400-e29b-41d4-a716-446655440000
 
 # Фільтр за доступними книгами
 GET /books/?status=available
@@ -136,12 +137,19 @@ GET /books/?status=available
 # Пошук книг Шевченка
 GET /books/?author=Шевченко
 
-# Сортування за роком (новіші перші)
-GET /books/?sort_by=year&ascending=false
+# Сортування за часом створення (новіші перші)
+GET /books/?sort_by=created_at&ascending=false
 
 # Комбінований запит
 GET /books/?status=available&author=Шевченко&limit=10&sort_by=year&ascending=false
 ```
+
+#### 🔄 Як працює Cursor пагінація:
+
+1. **Перший запит**: `GET /books/?limit=10` - повертає перші 10 книг
+2. **Наступні сторінки**: Використовуйте `next_cursor` з попередньої відповіді
+3. **Приклад**: `GET /books/?limit=10&cursor=550e8400-e29b-41d4-a716-446655440000`
+4. **Кінець**: Коли `has_next: false`, більше сторінок немає
 
 ### ➕ Створення нової книги
 

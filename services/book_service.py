@@ -22,36 +22,29 @@ class BookService:
         created_book = self.repository.add_book(book)
         return created_book.to_dict()
     
-    def get_all_books(
+    def get_all_books_cursor(
         self,
         limit: int = 100,
-        offset: int = 0,
+        cursor: Optional[str] = None,
         status: Optional[BookStatus] = None,
         author: Optional[str] = None,
-        sort_by: str = "title",
+        sort_by: str = "created_at",
         ascending: bool = True
     ) -> Dict[str, Any]:
-        books = self.repository.get_all_books(
+        books, next_cursor = self.repository.get_all_books_cursor(
             limit=limit,
-            offset=offset,
+            cursor=cursor,
             status=status,
             author=author,
             sort_by=sort_by,
             ascending=ascending
         )
         
-        total_count = self.repository.count_books(
-            status=status,
-            author=author
-        )
-        
         return {
             "books": [book.to_dict() for book in books],
-            "total": total_count,
-            "limit": limit,
-            "offset": offset,
-            "has_next": offset + limit < total_count,
-            "has_prev": offset > 0
+            "next_cursor": next_cursor,
+            "has_next": next_cursor is not None,
+            "limit": limit
         }
     
     def get_book_by_id(self, book_id: str) -> Optional[Dict]:

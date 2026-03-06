@@ -18,15 +18,15 @@ class BookRepository:
         self.db.refresh(book)
         return book
     
-    def get_all_books(
+    def get_all_books_cursor(
         self,
         limit: int = 100,
-        offset: int = 0,
+        cursor: Optional[str] = None,
         status: Optional[BookStatus] = None,
         author: Optional[str] = None,
-        sort_by: str = "title",
+        sort_by: str = "created_at",
         ascending: bool = True
-    ) -> List[Book]:
+    ) -> tuple[List[Book], Optional[str]]:
         query = self.db.query(Book)
         
         # Apply filters
@@ -38,21 +38,48 @@ class BookRepository:
                 Book.author.ilike(f"%{author}%")
             )
         
-        # Apply sorting
         if sort_by == "title":
-            order_column = Book.title
+            order_columns = [Book.title, Book.id]
         elif sort_by == "year":
-            order_column = Book.year
+            order_columns = [Book.year, Book.id]
+        elif sort_by == "created_at":
+            order_columns = [Book.created_at, Book.id]
         else:
-            order_column = Book.title
+            order_columns = [Book.created_at, Book.id]
         
+        if cursor:
+            try:
+                cursor_uuid = UUID(cursor)
+                if ascending:
+                    # For ascending order, get items after cursor
+                    query = query.filter(Book.id > cursor_uuid)
+                else:
+                    # For descending order, get items before cursor
+                    query = query.filter(Book.id < cursor_uuid)
+            except ValueError:
+                # Invalid cursor, ignore it
+                pass
+        
+        # Apply sorting
         if ascending:
-            query = query.order_by(asc(order_column))
+            for col in order_columns:
+                query = query.order_by(asc(col))
         else:
-            query = query.order_by(desc(order_column))
+            for col in order_columns:
+                query = query.order_by(desc(col))
         
-        # Apply pagination
-        return query.offset(offset).limit(limit).all()
+        # Apply limit (get one extra to determine if there's a next page)
+        books = query.limit(limit + 1).all()
+        
+        # Determine next cursor
+        next_cursor = None
+        has_next = len(books) > limit
+        if has_next:
+            books = books[:-1]
+            if books:
+                next_cursor = str(books[-1].id)
+        
+        return books, next_cursor
     
     def get_book_by_id(self, book_id: str) -> Optional[Book]:
         try:

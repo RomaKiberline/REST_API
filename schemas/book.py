@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
 from pydantic import BaseModel, Field
 
@@ -31,5 +31,14 @@ class BookUpdate(BaseModel):
 
 class Book(BookBase):
     id: str
-    
+    created_at: str
+
     model_config = {"from_attributes": True}
+
+
+# Cursor Pagination Schemas
+class CursorPaginatedBooksResponse(BaseModel):
+    books: List[Book]
+    next_cursor: Optional[str] = None
+    has_next: bool = False
+    limit: int
