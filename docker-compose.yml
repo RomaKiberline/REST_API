@@ -1,18 +1,19 @@
 version: '3.8'
 
 services:
-  db:
-    image: postgres:15
+  mongodb:
+    image: mongo:7.0
     environment:
-      POSTGRES_DB: library_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      MONGO_INITDB_ROOT_USERNAME: mongo_admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: library_db
     ports:
-      - "5432:5432"
+      - "27017:27017"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - mongodb_data:/data/db
+      - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -22,13 +23,13 @@ services:
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/library_db
+      MONGODB_URL: mongodb://mongo_admin:password@mongodb:27017/library_db
     depends_on:
-      db:
+      mongodb:
         condition: service_healthy
     volumes:
       - .:/app
     restart: unless-stopped
 
 volumes:
-  postgres_data:
+  mongodb_data:

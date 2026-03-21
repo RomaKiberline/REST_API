@@ -1,54 +1,49 @@
-# 📚 API Бібліотеки з Cursor пагінацією та Docker
+# 📚 API Бібліотеки з FastAPI та MongoDB
 
-> **Лабораторна робота 3** - REST API для управління книгами в бібліотеці з використанням PostgreSQL, SQLAlchemy та Docker контейнеризації з Cursor пагінацією.
+> **Лабораторна робота 4** - Робота з MongoDB
 
 [![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://docker.com)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://postgresql.org)
+[![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://mongodb.com)
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-1E90FF?style=for-the-badge)](https://sqlalchemy.org)
+[![Motor](https://img.shields.io/badge/Motor-00A046?style=for-the-badge)](https://motor.readthedocs.io)
 
 ## 🎯 Огляд проекту
 
-Простий та ефективний API для управління бібліотечною системою, побудований з використанням сучасних технологій Python.
+Асинхронний API для управління бібліотечною системою, побудований з використанням сучасних технологій Python та NoSQL бази даних MongoDB.
 
 ### ✨ Ключові особливості
 
 - **🚀 CRUD операції** - Повний цикл роботи з книгами (створення, читання, оновлення, видалення)
 - **📄 Пагінація** - Limit-Offset пагінація для ефективної роботи з великими обсягами даних
 - **🔍 Фільтрація** - Розширені можливості фільтрації за статусом та автором
-- **📊 Сортування** - Динамічне сортування за назвою або роком видання
+- **📊 Сортування** - Динамічне сортування за назвою, автором, роком або часом створення
 - **✅ Валідація** - Автоматична валідація даних з Pydantic
 - **🐳 Docker** - Повна контейнеризація додатку та бази даних
-- **🗄️ PostgreSQL** - Надійна реляційна база даних
-- **🧪 Тестування** - Комплексний набір юніт тестів
+- **🗄️ MongoDB** - Гнучка NoSQL база даних з JSON документами
+- **🧪 Тестування** - Комплексний набір юніт тестів з мокуванням
+- **⚡ Асинхронність** - Використання async/await для високої продуктивності
 
 ## 🏗️ Архітектура проекту
 
 Проект побудований за принципами **чистої архітектури** з чітким розділенням відповідальностей:
 
 ```
-├── 📁 api/              # 🌐 API шар - FastAPI роутери
-│   └── books.py         # Книжкові ендпоінти
-├── 📁 schemas/          # 📋 Схеми - Pydantic моделі валідації
-│   ├── book.py          # Схеми книг
-│   └── pagination.py    # Схеми пагінації
-├── 📁 services/         # 💼 Бізнес-логіка - сервіси додатку
-│   └── book_service.py  # Сервіс роботи з книгами
-├── 📁 repository/       # 🗃️ Доступ до даних - репозиторії
-│   └── book_repository.py # Репозиторій книг
-├── 📁 models/           # 🏗️ Дані моделі - SQLAlchemy ORM
-│   └── book.py          # Модель книги
-├── 📁 tests/            # 🧪 Тестування - юніт тести
-│   └── test_books.py    # Тести API
-├── 📁 alembic/          # 🔄 Міграції БД
-│   ├── versions/        # Версії міграцій
-│   └── env.py           # Конфігурація Alembic
-├── 🐳 Dockerfile        # Docker образ API
-├── 🐳 docker-compose.yml # Оркестрація контейнерів
-├── ⚙️ main.py           # Головний файл додатку
-├── 🗄️ database.py       # Конфігурація БД
-├── 📦 requirements.txt  # Залежності Python
-└── 📖 README.md         # Ця документація
+├── 📁 api/                    # API шар - FastAPI роутери
+│   └── books_mongo.py         # Книжкові ендпоінти для MongoDB
+├── 📁 schemas/                # Схеми - Pydantic моделі валідації
+│   └── book_mongo.py          # Схеми книг з ObjectId підтримкою
+├── 📁 services/               # Бізнес-логіка - сервіси додатку
+│   └── book_mongo_service.py  # Сервіс роботи з книгами MongoDB
+├── 📁 mongodb/                # Доступ до даних - MongoDB репозиторії
+│   ├── client.py              # MongoDB клієнт та підключення
+│   └── book_repository.py     # Репозиторій книг MongoDB
+├── 📁 tests/                  # Тестування - юніт тести
+│   └── test_books_mongo.py    # Тести API для MongoDB
+├── 🐳 Dockerfile              # Docker образ API
+├── 🐳 docker-compose.yml      # Оркестрація контейнерів
+├── ⚙️ main.py                 # Головний файл додатку
+├── 📦 requirements.txt        # Залежності Python
+└── 📖 README.md               # Ця документація
 ```
 
 ## 🚀 Швидкий старт
@@ -84,7 +79,7 @@ docker-compose up --build
 
 ## 📚 Ендпоінти API
 
-### 📖 Отримання книг з Cursor пагінацією
+### 📖 Отримання книг з пагінацією
 
 ```http
 GET /books/
@@ -95,10 +90,10 @@ GET /books/
 | Параметр | Тип | Опис | Приклад |
 |----------|-----|------|---------|
 | `limit` | integer | Кількість книг на сторінці (1-1000) | `10` |
-| `cursor` | string | Cursor для пагінації (ID останньої книги з попередньої сторінки) | `550e8400-e29b-41d4-a716-446655440000` |
+| `offset` | integer | Кількість книг для пропуску | `0` |
 | `status` | string | Фільтр за статусом (`available` або `borrowed`) | `available` |
 | `author` | string | Фільтр за автором (частковий збіг) | `Шевченко` |
-| `sort_by` | string | Сортування (`title`, `year` або `created_at`) | `created_at` |
+| `sort_by` | string | Сортування (`title`, `author`, `year` або `created_at`) | `year` |
 | `ascending` | boolean | Порядок сортування | `false` |
 
 #### 📤 Відповідь
@@ -107,7 +102,7 @@ GET /books/
 {
   "books": [
     {
-      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "id": "507f1f77bcf86cd799439011",
       "title": "Кобзар",
       "author": "Тарас Шевченко",
       "description": "Збірка поезій",
@@ -116,9 +111,11 @@ GET /books/
       "created_at": "2026-01-01T12:00:00Z"
     }
   ],
-  "next_cursor": "550e8400-e29b-41d4-a716-446655440001",
+  "total": 150,
+  "limit": 10,
+  "offset": 0,
   "has_next": true,
-  "limit": 10
+  "has_prev": false
 }
 ```
 
@@ -126,10 +123,7 @@ GET /books/
 
 ```bash
 # Отримати перші 5 книг
-GET /books/?limit=5
-
-# Отримати наступну сторінку використовуючи cursor
-GET /books/?limit=5&cursor=550e8400-e29b-41d4-a716-446655440000
+GET /books/?limit=5&offset=0
 
 # Фільтр за доступними книгами
 GET /books/?status=available
@@ -137,19 +131,12 @@ GET /books/?status=available
 # Пошук книг Шевченка
 GET /books/?author=Шевченко
 
-# Сортування за часом створення (новіші перші)
-GET /books/?sort_by=created_at&ascending=false
+# Сортування за роком (новіші перші)
+GET /books/?sort_by=year&ascending=false
 
 # Комбінований запит
 GET /books/?status=available&author=Шевченко&limit=10&sort_by=year&ascending=false
 ```
-
-#### 🔄 Як працює Cursor пагінація:
-
-1. **Перший запит**: `GET /books/?limit=10` - повертає перші 10 книг
-2. **Наступні сторінки**: Використовуйте `next_cursor` з попередньої відповіді
-3. **Приклад**: `GET /books/?limit=10&cursor=550e8400-e29b-41d4-a716-446655440000`
-4. **Кінець**: Коли `has_next: false`, більше сторінок немає
 
 ### ➕ Створення нової книги
 
@@ -173,7 +160,7 @@ POST /books/
 
 ```json
 {
-  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "id": "507f1f77bcf86cd799439011",
   "title": "Назва книги",
   "author": "Автор книги",
   "description": "Опис книги",
@@ -193,21 +180,7 @@ GET /books/{book_id}
 
 | Параметр | Тип | Опис | Приклад |
 |----------|-----|------|---------|
-| `book_id` | string | UUID книги | `550e8400-e29b-41d4-a716-446655440000` |
-
-#### 📤 Успішна відповідь (200 OK)
-
-```json
-{
-  "id": "550e8400-e29b-41d4-a716-446655440000",
-  "title": "Кобзар",
-  "author": "Тарас Шевченко",
-  "description": "Збірка поезій",
-  "status": "available",
-  "year": 1840,
-  "created_at": "2026-01-01T12:00:00Z"
-}
-```
+| `book_id` | string | ObjectId книги | `507f1f77bcf86cd799439011` |
 
 ### 🗑️ Видалення книги
 
@@ -240,7 +213,7 @@ pytest -v
 - ✅ Тестування пагінації
 - ✅ Тестування фільтрації та сортування
 - ✅ Тестування валідації
-- ✅ Mock тестування сервісів
+- ✅ Async mock тестування сервісів
 
 ## 🐳 Docker деталі
 
@@ -249,19 +222,19 @@ pytest -v
 ```yaml
 version: '3.8'
 services:
-  db:
-    image: postgres:15
+  mongodb:
+    image: mongo:7.0
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: library_db
+      MONGO_INITDB_ROOT_USERNAME: mongo_admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: library_db
     ports:
-      - "5432:5432"
+      - "27017:27017"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - mongodb_data:/data/db
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
       timeout: 5s
       retries: 5
 
@@ -270,16 +243,16 @@ services:
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/library_db
+      MONGODB_URL: mongodb://mongo_admin:password@mongodb:27017/library_db
     depends_on:
-      db:
+      mongodb:
         condition: service_healthy
     volumes:
       - .:/app
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    restart: unless-stopped
 
 volumes:
-  postgres_data:
+  mongodb_data:
 ```
 
 ### 🔧 Dockerfile
@@ -290,7 +263,6 @@ FROM python:3.11-slim
 # Встановлення системних залежностей
 RUN apt-get update && apt-get install -y \
     gcc \
-    postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
 # Робоча директорія
@@ -315,15 +287,12 @@ CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
 # 1. Встановіть залежності
 pip install -r requirements.txt
 
-# 2. Запустіть PostgreSQL локально або використовуйте Docker
-# Варіант 1: Docker PostgreSQL
-docker run -d --name postgres-dev -p 5432:5432 -e POSTGRES_PASSWORD=postgres postgres:15
+# 2. Запустіть MongoDB локально або використовуйте Docker
+# Docker MongoDB
+docker run -d --name mongo-dev -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME=mongo_admin -e MONGO_INITDB_ROOT_PASSWORD=password mongo:7.0
 
-# Варіант 2: Локальний PostgreSQL
-# Створіть базу даних library_db
-
-# 3. Запустіть міграції
-alembic upgrade head
+# 3. Встановіть змінну середовища
+export MONGODB_URL="mongodb://mongo_admin:password@localhost:27017/library_db"
 
 # 4. Запустіть додаток
 uvicorn main:app --reload
@@ -336,37 +305,65 @@ uvicorn main:app --reload
 # Логи API
 docker logs restapi-api-1
 
-# Логи PostgreSQL
-docker logs restapi-db-1
+# Логи MongoDB
+docker logs restapi-mongodb-1
 
 # Логи в реальному часі
 docker logs -f restapi-api-1
 ```
 
-#### Підключення до БД
+#### Підключення до MongoDB
 ```bash
-# Вхід до PostgreSQL контейнера
-docker exec -it restapi-db-1 psql -U postgres -d library_db
+# Вхід до MongoDB контейнера
+docker exec -it restapi-mongodb-1 mongosh --username mongo_admin --password password --authenticationDatabase admin
 
-# Перевірка таблиць
-\dt
+# Переключення на базу даних
+use library_db
+
+# Перевірка колекцій
+show collections
 
 # Перевірка даних
-SELECT * FROM books LIMIT 5;
+db.books.find().limit(5)
 ```
 
-## 📊 Схема даних
+## 📊 Схема даних MongoDB
 
-### 🗂️ Таблиця `books`
+### 🗂️ Колекція `books`
 
 | Поле | Тип | Обов'язкове | Опис |
 |------|-----|-------------|------|
-| `id` | UUID | ✅ | Первинний ключ |
-| `title` | VARCHAR(200) | ✅ | Назва книги |
-| `author` | VARCHAR(100) | ✅ | Автор книги |
-| `description` | VARCHAR(1000) | ❌ | Опис книги |
-| `status` | ENUM | ✅ | Статус (`available` або `borrowed`) |
-| `year` | INTEGER | ✅ | Рік видання (1000-2100) |
-| `created_at` | TIMESTAMP | ✅ | Час створення |
+| `_id` | ObjectId | ✅ | Первинний ключ (генерується MongoDB) |
+| `title` | String | ✅ | Назва книги |
+| `author` | String | ✅ | Автор книги |
+| `description` | String | ❌ | Опис книги |
+| `status` | String | ✅ | Статус (`available` або `borrowed`) |
+| `year` | Integer | ✅ | Рік видання (1000-2100) |
+| `created_at` | Date | ✅ | Час створення |
 
+### 📋 Індекси
 
+Для оптимізації запитів створені індекси:
+- `title` - для сортування за назвою
+- `author` - для фільтрації за автором
+- `year` - для сортування за роком
+- `status` - для фільтрації за статусом
+
+## 🚀 Технологічний стек
+
+- **🐍 Python 3.11** - Основна мова програмування
+- **⚡ FastAPI** - Високопродуктивний веб-фреймворк
+- **🗄️ MongoDB** - NoSQL база даних
+- **🔄 Motor** - Асинхронний драйвер MongoDB
+- **🔧 Pydantic** - Валідація та серіалізація даних
+- **🐳 Docker** - Контейнеризація
+- **🧪 Pytest** - Тестування
+- **📦 pydantic-mongo** - Підтримка ObjectId в Pydantic
+
+## 🎯 Переваги MongoDB
+
+- **🚀 Гнучкість** - Динамічна схема документів
+- **⚡ Продуктивність** - Швидкі операції читання/запису
+- **📈 Масштабованість** - Горизонтальне масштабування
+- **🔄 Асинхронність** - Високий рівень конкурентності
+- **📝 JSON** - Нативна підтримка JSON документів
