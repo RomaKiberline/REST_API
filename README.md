@@ -1,162 +1,179 @@
-# API Бібліотеки
+# Library API - FastAPI + JWT Authentication
 
-Простий API для управління книгами в бібліотеці, побудований з FastAPI.
+## Опис
 
-## Функціонал
+API для управління бібліотекою книг з JWT автентифікацією та авторизацією. Реалізовано access token + refresh token flow.
 
-- **CRUD операції**: Створення, читання, оновлення та видалення книг
-- **Фільтрація**: Фільтрація книг за статусом (доступна/видана) та автором
-- **Сортування**: Сортування книг за назвою або роком видання
-- **Валідація**: Валідація вхідних даних за допомогою Pydantic
-- **Async/Await**: Повна підтримка асинхронності
-- **Юніт тести**: Комплексне тестування
+## Технологічний стек
 
-## Структура проекту
+- **FastAPI** - Високопродуктивний веб-фреймворк
+- **JWT** - JSON Web Tokens для автентифікації
+- **OAuth2** - OAuth2PasswordBearer для токенів
+- **Passlib** - Хешування паролів
+- **Pydantic** - Валідація даних
+- **Pytest** - Тестування
 
-```
-├── api/              # Ендпоінти API
-│   └── books.py      # Ендпоінти для роботи з книгами
-├── schemas/          # Pydantic схеми для валідації
-│   └── book.py       # Схеми книг
-├── services/         # Шар бізнес-логіки
-│   └── book_service.py
-├── repository/       # Шар доступу до даних
-│   └── book_repository.py
-├── models/           # Моделі даних
-│   └── book.py       # Модель книги
-├── tests/            # Юніт тести
-│   └── test_books.py
-├── main.py           # Точка входу FastAPI додатку
-├── requirements.txt  # Залежності Python
-└── README.md         # Цей файл
-```
+## Функціональність
 
-## Встановлення
+###  Автентифікація:
+- `POST /auth/token` - Логін та отримання токенів
+- `POST /auth/refresh` - Оновлення access token
+- `GET /auth/me` - Інформація про поточного користувача
 
-1. Клонуйте репозиторій:
+###  Захищені ендпоінти книг:
+- `GET /books` - Отримати всі книги
+- `GET /books/{id}` - Отримати книгу за ID
+- `POST /books` - Створити нову книгу
+- `PUT /books/{id}` - Оновити книгу
+- `DELETE /books/{id}` - Видалити книгу
+
+###  Публічні ендпоінти:
+- `GET /` - Інформація про API
+- `GET /health` - Перевірка здоров'я
+
+## Запуск проєкту
+
+### Встановлення залежностей
 ```bash
-git clone https://github.com/RomaKiberline/REST_API.git
-cd REST_API
+pip install -r requirements-jwt.txt
 ```
 
-2. Встановіть залежності:
+### Запуск
 ```bash
-pip install -r requirements.txt
+python main_jwt.py
 ```
-
-## Запуск додатку
-
-Запустіть FastAPI сервер:
-
-```bash
-python main.py
-```
-
-Або використовуйте uvicorn безпосередньо:
-
-```bash
-uvicorn main:app --reload
-```
-
-API буде доступний за адресою `http://localhost:8000`
 
 ## Документація API
 
-Після запуску сервера ви можете отримати доступ:
+### Swagger UI
+Відкрийте у браузері: http://localhost:8000/docs
 
-- **Swagger UI**: `http://localhost:8000/docs`
+##  JWT Token Flow
 
-## Ендпоінти книг
-
-| Метод | Ендпоінт | Опис |
-|--------|----------|-------------|
-| GET | `/books/` | Отримати всі книги з опціональною фільтрацією та сортуванням |
-| GET | `/books/{book_id}` | Отримати конкретну книгу за ID |
-| POST | `/books/` | Створити нову книгу |
-| DELETE | `/books/{book_id}` | Видалити книгу за ID |
-
-### Параметри запиту для GET /books/
-
-- `status` (опціонально): Фільтрувати за статусом книги (`available` або `borrowed`)
-- `author` (опціонально): Фільтрувати за автором (частковий збіг, без урахування регістру)
-- `sort_by` (опціонально): Сортувати за полем (`title` або `year`, за замовчуванням: `title`)
-- `ascending` (опціонально): Порядок сортування (`true` або `false`, за замовчуванням: `true`)
-
-### Приклади
-
-#### Отримати всі доступні книги, відсортовані за назвою
+### 1. Логін (отримання токенів)
 ```bash
-curl "http://localhost:8000/books/?status=available&sort_by=title&ascending=true"
+curl -X POST "http://localhost:8000/auth/token" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=johndoe&password=secret"
 ```
 
-#### Отримати книги автора "Іван", відсортовані за роком (новіші перші)
-```bash
-curl "http://localhost:8000/books/?author=Іван&sort_by=year&ascending=false"
-```
-
-#### Створити нову книгу
-```bash
-curl -X POST "http://localhost:8000/books/" \
-     -H "Content-Type: application/json" \
-     -d '{
-       "title": "Великий Гетсбі",
-       "author": "Френсіс Скотт Фіцджеральд",
-       "description": "Класичний американський роман",
-       "year": 1925,
-       "status": "available"
-     }'
-```
-
-#### Видалити книгу
-```bash
-curl -X DELETE "http://localhost:8000/books/{book_id}"
-```
-
-## Схема книги
-
+**Відповідь:**
 ```json
 {
-  "id": "uuid",
+  "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+  "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+  "token_type": "bearer"
+}
+```
+
+### 2. Використання Access Token
+```bash
+curl -X GET "http://localhost:8000/books" \
+  -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+```
+
+### 3. Оновлення Access Token
+```bash
+curl -X POST "http://localhost:8000/auth/refresh" \
+  -H "Content-Type: application/json" \
+  -d '{"refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."}'
+```
+
+##  Тестові користувачі
+
+### Користувач 1:
+- **Username:** `johndoe`
+- **Password:** `secret`
+- **Email:** `johndoe@example.com`
+
+### Користувач 2:
+- **Username:** `alice`
+- **Password:** `secret123`
+- **Email:** `alice@example.com`
+
+##Тестування
+
+```bash
+pytest tests/test_jwt_auth.py -v
+```
+
+## Моделі даних
+
+### Token
+```json
+{
+  "access_token": "string",
+  "refresh_token": "string",
+  "token_type": "bearer"
+}
+```
+
+### User
+```json
+{
+  "username": "string",
+  "email": "string",
+  "full_name": "string",
+  "disabled": "boolean"
+}
+```
+
+### Book
+```json
+{
+  "id": "integer",
   "title": "string",
   "author": "string",
   "description": "string",
-  "status": "available|borrowed (за замовчуванням: available)",
   "year": "integer",
+  "status": "string",
   "created_at": "datetime"
 }
 ```
 
-## Запуск тестів
+## Конфігурація JWT
 
-Запустіть набір тестів:
+### Access Token:
+- **Термін дії:** 30 хвилин
+- **Алгоритм:** HS256
+- **Тип:** "access"
 
+### Refresh Token:
+- **Термін дії:** 7 днів
+- **Алгоритм:** HS256
+- **Тип:** "refresh"
+
+
+## Розгортання
+
+### Docker
 ```bash
-pytest
+FROM python:3.11-slim
+WORKDIR /app
+COPY requirements-jwt.txt .
+RUN pip install -r requirements-jwt.txt
+COPY . .
+EXPOSE 8000
+CMD ["python", "main_jwt.py"]
 ```
 
-Запустіть тести з покриттям:
-
+### Environment Variables
 ```bash
-pytest --cov=.
+export SECRET_KEY="your-secret-key"
+export ACCESS_TOKEN_EXPIRE_MINUTES=30
+export REFRESH_TOKEN_EXPIRE_DAYS=7
 ```
 
-## HTTP статус коди
+## Структура проєкту
 
-- `200 OK`: Успішний GET запит
-- `201 Created`: Книгу успішно створено
-- `204 No Content`: Книгу успішно видалено (ідемпотентно)
-- `400 Bad Request`: Невірні дані запиту або формат ID
-- `404 Not Found`: Книгу не знайдено
-- `422 Unprocessable Entity`: Помилка валідації
-
-## Зберігання даних
-
-Ця реалізація використовує в пам'яті `List[Dict]` для зберігання даних, як зазначено у вимогах. Дані втрачаються при перезапуску сервера. У виробничому середовищі це можна замінити на справжню базу даних.
-
-## Використані технології
-
-- **FastAPI**: Сучасний, швидкий веб-фреймворк для створення API
-- **Pydantic**: Валідація даних з використанням анотацій типів Python
-- **Uvicorn**: ASGI сервер для запуску FastAPI додатків
-- **Pytest**: Фреймворк для тестування
-- **Python 3.8+**: Підтримка async/await
+```
+REST_API/
+├── main_jwt.py                 # FastAPI додаток з JWT
+├── requirements-jwt.txt        # Залежності для JWT
+├── auth/                       # Модуль автентифікації
+│   ├── __init__.py
+│   ├── jwt_config.py           # JWT конфігурація
+│   └── auth_routes.py          # Автентифікаційні маршрути
+└── tests/
+    └── test_jwt_auth.py        # Тести JWT
+```
