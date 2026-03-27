@@ -1,162 +1,67 @@
-# API Бібліотеки
+# Library Mock API - Lab 8
 
-Простий API для управління книгами в бібліотеці, побудований з FastAPI.
+## Опис
 
-## Функціонал
+Mock API для бібліотеки книг з використанням Stoplight Prism.
 
-- **CRUD операції**: Створення, читання, оновлення та видалення книг
-- **Фільтрація**: Фільтрація книг за статусом (доступна/видана) та автором
-- **Сортування**: Сортування книг за назвою або роком видання
-- **Валідація**: Валідація вхідних даних за допомогою Pydantic
-- **Async/Await**: Повна підтримка асинхронності
-- **Юніт тести**: Комплексне тестування
+## Вимоги лабораторної
 
-## Структура проекту
+- Stoplight Prism framework для HTTP mocking
+- OpenAPI специфікація
+- Docker Compose з командою для запуску mock сервісу
 
-```
-├── api/              # Ендпоінти API
-│   └── books.py      # Ендпоінти для роботи з книгами
-├── schemas/          # Pydantic схеми для валідації
-│   └── book.py       # Схеми книг
-├── services/         # Шар бізнес-логіки
-│   └── book_service.py
-├── repository/       # Шар доступу до даних
-│   └── book_repository.py
-├── models/           # Моделі даних
-│   └── book.py       # Модель книги
-├── tests/            # Юніт тести
-│   └── test_books.py
-├── main.py           # Точка входу FastAPI додатку
-├── requirements.txt  # Залежності Python
-└── README.md         # Цей файл
-```
+## Функціональність
 
-## Встановлення
+### Ендпоінти:
+- `GET /` - Інформація про API
+- `GET /health` - Перевірка здоров'я
+- `POST /token` - Логін та JWT токени
+- `POST /refresh` - Оновлення токена
+- `GET /books` - Список книг (авторизація)
+- `POST /books` - Створення книги (авторизація)
+- `GET /books/{id}` - Книга за ID (авторизація)
+- `GET /users/me` - Профіль користувача (авторизація)
 
-1. Клонуйте репозиторій:
+## Запуск
+
+### Через Prism CLI:
 ```bash
-git clone https://github.com/RomaKiberline/REST_API.git
-cd REST_API
+npx @stoplight/prism-cli mock openapi.yaml -h 0.0.0.0 -p 4010
 ```
 
-2. Встановіть залежності:
+### Через Docker Compose:
 ```bash
-pip install -r requirements.txt
+docker-compose up -d
 ```
 
-## Запуск додатку
+Command для запуску mock сервісу:
+```
+mock -h 0.0.0.0 -p 4010 /tmp/openapi.yaml
+```
 
-Запустіть FastAPI сервер:
+## Тестування
 
 ```bash
-python main.py
+# Запуск Mock API
+npx @stoplight/prism-cli mock openapi.yaml -h 0.0.0.0 -p 4010
+
+# Тести
+python tests/test_mock_api.py
 ```
 
-Або використовуйте uvicorn безпосередньо:
+## Структура проєкту
 
-```bash
-uvicorn main:app --reload
+```
+REST_API/
+├── openapi.yaml               # OpenAPI специфікація для API
+├── docker-compose.yaml        # Docker Compose з Prism
+├── tests/
+│   └── test_mock_api.py       # Тестовий скрипт
+├── requirements.txt           # Python залежності
+└── README.md                  # Документація
 ```
 
-API буде доступний за адресою `http://localhost:8000`
+## Тестові користувачі
 
-## Документація API
-
-Після запуску сервера ви можете отримати доступ:
-
-- **Swagger UI**: `http://localhost:8000/docs`
-
-## Ендпоінти книг
-
-| Метод | Ендпоінт | Опис |
-|--------|----------|-------------|
-| GET | `/books/` | Отримати всі книги з опціональною фільтрацією та сортуванням |
-| GET | `/books/{book_id}` | Отримати конкретну книгу за ID |
-| POST | `/books/` | Створити нову книгу |
-| DELETE | `/books/{book_id}` | Видалити книгу за ID |
-
-### Параметри запиту для GET /books/
-
-- `status` (опціонально): Фільтрувати за статусом книги (`available` або `borrowed`)
-- `author` (опціонально): Фільтрувати за автором (частковий збіг, без урахування регістру)
-- `sort_by` (опціонально): Сортувати за полем (`title` або `year`, за замовчуванням: `title`)
-- `ascending` (опціонально): Порядок сортування (`true` або `false`, за замовчуванням: `true`)
-
-### Приклади
-
-#### Отримати всі доступні книги, відсортовані за назвою
-```bash
-curl "http://localhost:8000/books/?status=available&sort_by=title&ascending=true"
-```
-
-#### Отримати книги автора "Іван", відсортовані за роком (новіші перші)
-```bash
-curl "http://localhost:8000/books/?author=Іван&sort_by=year&ascending=false"
-```
-
-#### Створити нову книгу
-```bash
-curl -X POST "http://localhost:8000/books/" \
-     -H "Content-Type: application/json" \
-     -d '{
-       "title": "Великий Гетсбі",
-       "author": "Френсіс Скотт Фіцджеральд",
-       "description": "Класичний американський роман",
-       "year": 1925,
-       "status": "available"
-     }'
-```
-
-#### Видалити книгу
-```bash
-curl -X DELETE "http://localhost:8000/books/{book_id}"
-```
-
-## Схема книги
-
-```json
-{
-  "id": "uuid",
-  "title": "string",
-  "author": "string",
-  "description": "string",
-  "status": "available|borrowed (за замовчуванням: available)",
-  "year": "integer",
-  "created_at": "datetime"
-}
-```
-
-## Запуск тестів
-
-Запустіть набір тестів:
-
-```bash
-pytest
-```
-
-Запустіть тести з покриттям:
-
-```bash
-pytest --cov=.
-```
-
-## HTTP статус коди
-
-- `200 OK`: Успішний GET запит
-- `201 Created`: Книгу успішно створено
-- `204 No Content`: Книгу успішно видалено (ідемпотентно)
-- `400 Bad Request`: Невірні дані запиту або формат ID
-- `404 Not Found`: Книгу не знайдено
-- `422 Unprocessable Entity`: Помилка валідації
-
-## Зберігання даних
-
-Ця реалізація використовує в пам'яті `List[Dict]` для зберігання даних, як зазначено у вимогах. Дані втрачаються при перезапуску сервера. У виробничому середовищі це можна замінити на справжню базу даних.
-
-## Використані технології
-
-- **FastAPI**: Сучасний, швидкий веб-фреймворк для створення API
-- **Pydantic**: Валідація даних з використанням анотацій типів Python
-- **Uvicorn**: ASGI сервер для запуску FastAPI додатків
-- **Pytest**: Фреймворк для тестування
-- **Python 3.8+**: Підтримка async/await
+- johndoe / secret
+- alice / secret123

@@ -1,0 +1,249 @@
+openapi: 3.0.3
+info:
+  title: Library Mock API
+  description: Mock API for Library Management System with JWT Authentication
+  version: 1.0.0
+  contact:
+    name: Library API Team
+
+servers:
+  - url: http://localhost:4010
+    description: Mock API Server (Prism)
+  - url: http://localhost:8000
+    description: Development API Server
+
+paths:
+  /:
+    get:
+      summary: API Information
+      description: Returns basic information about the API
+      tags:
+        - Public
+      responses:
+        '200':
+          description: API information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Library API with JWT Authentication"
+                  docs:
+                    type: string
+                    example: "/docs"
+                  token:
+                    type: string
+                    example: "/token"
+
+  /health:
+    get:
+      summary: Health Check
+      description: Check if the API is running
+      tags:
+        - Public
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: "2024-01-01T12:00:00Z"
+
+  /token:
+    post:
+      summary: Login
+      description: Authenticate user and get JWT tokens
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  example: "johndoe"
+                password:
+                  type: string
+                  example: "secret"
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                  refresh_token:
+                    type: string
+                  token_type:
+                    type: string
+                    example: "bearer"
+        '401':
+          description: Invalid credentials
+
+  /refresh:
+    post:
+      summary: Refresh Token
+      description: Get new access token using refresh token
+      tags:
+        - Authentication
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refresh_token:
+                  type: string
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                  refresh_token:
+                    type: string
+                  token_type:
+                    type: string
+                    example: "bearer"
+
+  /books:
+    get:
+      summary: Get All Books
+      description: Retrieve list of all books
+      tags:
+        - Books
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of books
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    title:
+                      type: string
+                    author:
+                      type: string
+                    description:
+                      type: string
+                    year:
+                      type: integer
+                    status:
+                      type: string
+                    created_at:
+                      type: string
+        '401':
+          description: Not authenticated
+
+    post:
+      summary: Create Book
+      description: Create a new book
+      tags:
+        - Books
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                author:
+                  type: string
+                description:
+                  type: string
+                year:
+                  type: integer
+      responses:
+        '201':
+          description: Book created
+        '401':
+          description: Not authenticated
+
+  /books/{bookId}:
+    get:
+      summary: Get Book by ID
+      description: Retrieve a specific book by its ID
+      tags:
+        - Books
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bookId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Book found
+        '401':
+          description: Not authenticated
+        '404':
+          description: Book not found
+
+  /users/me:
+    get:
+      summary: Get Current User
+      description: Get information about current authenticated user
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  username:
+                    type: string
+                  email:
+                    type: string
+                  full_name:
+                    type: string
+                  disabled:
+                    type: boolean
+        '401':
+          description: Not authenticated
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
