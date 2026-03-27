@@ -40,6 +40,7 @@ pytest tests/test_auth_no_redis.py -v
 
 ## Структура проєкту
 
+```
 REST_API/
 ├── main.py                    # FastAPI додаток
 ├── rate_limiter.py            # Rate limiter логіка
@@ -54,6 +55,7 @@ REST_API/
     ├── test_auth_no_redis.py  # JWT тести
     ├── test_auth.py           # Старі тести JWT
     └── conftest.py            # Конфігурація тестів
+```
 
 ## Тестові користувачі
 
