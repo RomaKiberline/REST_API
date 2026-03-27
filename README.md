@@ -52,7 +52,3 @@ REST_API/
 
 - johndoe / secret
 - alice / secret123
-
-## Ліцензія
-
-MIT License
