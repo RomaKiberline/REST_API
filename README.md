@@ -1,162 +1,63 @@
-# API Бібліотеки
+﻿# Library API - FastAPI + JWT + Rate Limiter
 
-Простий API для управління книгами в бібліотеці, побудований з FastAPI.
+## Опис
 
-## Функціонал
+API для управління бібліотекою книг з JWT автентифікацією та Rate Limiter на основі Redis.
 
-- **CRUD операції**: Створення, читання, оновлення та видалення книг
-- **Фільтрація**: Фільтрація книг за статусом (доступна/видана) та автором
-- **Сортування**: Сортування книг за назвою або роком видання
-- **Валідація**: Валідація вхідних даних за допомогою Pydantic
-- **Async/Await**: Повна підтримка асинхронності
-- **Юніт тести**: Комплексне тестування
+## Функціональність
 
-## Структура проекту
+### Rate Limiting:
+- **Анонімні користувачі:** 2 запити за хвилину
+- **Авторизовані користувачі:** 10 запитів за хвилину
+- **Sliding time window** алгоритм
 
-```
-├── api/              # Ендпоінти API
-│   └── books.py      # Ендпоінти для роботи з книгами
-├── schemas/          # Pydantic схеми для валідації
-│   └── book.py       # Схеми книг
-├── services/         # Шар бізнес-логіки
-│   └── book_service.py
-├── repository/       # Шар доступу до даних
-│   └── book_repository.py
-├── models/           # Моделі даних
-│   └── book.py       # Модель книги
-├── tests/            # Юніт тести
-│   └── test_books.py
-├── main.py           # Точка входу FastAPI додатку
-├── requirements.txt  # Залежності Python
-└── README.md         # Цей файл
-```
+### API Ендпоінти:
+- POST /token - Логін та отримання токенів
+- GET /books - Отримати книги (авторизовані)
+- POST /books - Створити книгу (авторизовані)
+- GET /health - Перевірка здоров'я (без ліміту)
 
-## Встановлення
+## Запуск
 
-1. Клонуйте репозиторій:
-```bash
-git clone https://github.com/RomaKiberline/REST_API.git
-cd REST_API
-```
-
-2. Встановіть залежності:
-```bash
+### Встановлення:
 pip install -r requirements.txt
-```
 
-## Запуск додатку
-
-Запустіть FastAPI сервер:
-
-```bash
+### Запуск з Redis:
+docker-compose up -d redis
 python main.py
+
+### Запуск без Redis:
+python main.py
+
+## Документація
+
+Swagger UI: http://localhost:8000/docs
+
+## Тестування
+
+pytest tests/test_rate_limiter.py -v
+pytest tests/test_auth_no_redis.py -v
+
+## Структура проєкту
+
+```
+REST_API/
+├── main.py                    # FastAPI додаток
+├── rate_limiter.py            # Rate limiter логіка
+├── redis_config.py            # Redis конфігурація
+├── requirements.txt           # Залежності
+├── docker-compose.yml         # Docker з Redis
+├── Dockerfile                 # Docker контейнер
+├── .env.example               # Змінні середовища
+├── .gitignore                 # Git ігнор файли
+└── tests/                     # Тести
+    ├── test_rate_limiter.py   # Rate limiter тести
+    ├── test_auth_no_redis.py  # JWT тести
+    ├── test_auth.py           # Старі тести JWT
+    └── conftest.py            # Конфігурація тестів
 ```
 
-Або використовуйте uvicorn безпосередньо:
+## Тестові користувачі
 
-```bash
-uvicorn main:app --reload
-```
-
-API буде доступний за адресою `http://localhost:8000`
-
-## Документація API
-
-Після запуску сервера ви можете отримати доступ:
-
-- **Swagger UI**: `http://localhost:8000/docs`
-
-## Ендпоінти книг
-
-| Метод | Ендпоінт | Опис |
-|--------|----------|-------------|
-| GET | `/books/` | Отримати всі книги з опціональною фільтрацією та сортуванням |
-| GET | `/books/{book_id}` | Отримати конкретну книгу за ID |
-| POST | `/books/` | Створити нову книгу |
-| DELETE | `/books/{book_id}` | Видалити книгу за ID |
-
-### Параметри запиту для GET /books/
-
-- `status` (опціонально): Фільтрувати за статусом книги (`available` або `borrowed`)
-- `author` (опціонально): Фільтрувати за автором (частковий збіг, без урахування регістру)
-- `sort_by` (опціонально): Сортувати за полем (`title` або `year`, за замовчуванням: `title`)
-- `ascending` (опціонально): Порядок сортування (`true` або `false`, за замовчуванням: `true`)
-
-### Приклади
-
-#### Отримати всі доступні книги, відсортовані за назвою
-```bash
-curl "http://localhost:8000/books/?status=available&sort_by=title&ascending=true"
-```
-
-#### Отримати книги автора "Іван", відсортовані за роком (новіші перші)
-```bash
-curl "http://localhost:8000/books/?author=Іван&sort_by=year&ascending=false"
-```
-
-#### Створити нову книгу
-```bash
-curl -X POST "http://localhost:8000/books/" \
-     -H "Content-Type: application/json" \
-     -d '{
-       "title": "Великий Гетсбі",
-       "author": "Френсіс Скотт Фіцджеральд",
-       "description": "Класичний американський роман",
-       "year": 1925,
-       "status": "available"
-     }'
-```
-
-#### Видалити книгу
-```bash
-curl -X DELETE "http://localhost:8000/books/{book_id}"
-```
-
-## Схема книги
-
-```json
-{
-  "id": "uuid",
-  "title": "string",
-  "author": "string",
-  "description": "string",
-  "status": "available|borrowed (за замовчуванням: available)",
-  "year": "integer",
-  "created_at": "datetime"
-}
-```
-
-## Запуск тестів
-
-Запустіть набір тестів:
-
-```bash
-pytest
-```
-
-Запустіть тести з покриттям:
-
-```bash
-pytest --cov=.
-```
-
-## HTTP статус коди
-
-- `200 OK`: Успішний GET запит
-- `201 Created`: Книгу успішно створено
-- `204 No Content`: Книгу успішно видалено (ідемпотентно)
-- `400 Bad Request`: Невірні дані запиту або формат ID
-- `404 Not Found`: Книгу не знайдено
-- `422 Unprocessable Entity`: Помилка валідації
-
-## Зберігання даних
-
-Ця реалізація використовує в пам'яті `List[Dict]` для зберігання даних, як зазначено у вимогах. Дані втрачаються при перезапуску сервера. У виробничому середовищі це можна замінити на справжню базу даних.
-
-## Використані технології
-
-- **FastAPI**: Сучасний, швидкий веб-фреймворк для створення API
-- **Pydantic**: Валідація даних з використанням анотацій типів Python
-- **Uvicorn**: ASGI сервер для запуску FastAPI додатків
-- **Pytest**: Фреймворк для тестування
-- **Python 3.8+**: Підтримка async/await
+- johndoe / secret
+- alice / secret123
