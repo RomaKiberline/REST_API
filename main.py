@@ -1,9 +1,10 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from typing import List, Optional
 from pydantic import BaseModel
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
+from rate_limiter import rate_limit, get_current_user_optional
 
 app = FastAPI(
     title="Library API with JWT Authentication",
@@ -134,7 +135,9 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
     return current_user
 
 @app.post("/token", response_model=Token)
-async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
+async def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestForm = Depends()):
+    await rate_limit(request)
+    
     user = authenticate_user(fake_users_db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(
@@ -189,7 +192,8 @@ async def read_users_me(current_user: User = Depends(get_current_active_user)):
     return current_user
 
 @app.get("/books", response_model=List[Book])
-async def get_books(current_user: User = Depends(get_current_active_user)):
+async def get_books(request: Request, current_user: User = Depends(get_current_active_user)):
+    await rate_limit(request, current_user)
     return books_db
 
 @app.get("/books/{book_id}", response_model=Book)
@@ -200,7 +204,9 @@ async def get_book(book_id: int, current_user: User = Depends(get_current_active
     return book
 
 @app.post("/books", response_model=Book)
-async def create_book(book: Book, current_user: User = Depends(get_current_active_user)):
+async def create_book(request: Request, book: Book, current_user: User = Depends(get_current_active_user)):
+    await rate_limit(request, current_user)
+    
     global book_counter
     book.id = book_counter
     book.created_at = datetime.now()
@@ -209,8 +215,9 @@ async def create_book(book: Book, current_user: User = Depends(get_current_activ
     return book
 
 @app.get("/")
-async def root():
-    return {"message": "Library API with JWT Authentication", "docs": "/docs", "token": "/token"}
+async def root(request: Request):
+    await rate_limit(request)
+    return {"message": "Library API with JWT Authentication and Rate Limiting", "docs": "/docs", "token": "/token"}
 
 @app.get("/health")
 async def health_check():
