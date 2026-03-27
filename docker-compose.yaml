@@ -1,0 +1,28 @@
+services:
+  mock-api:
+    image: stoplight/prism:4
+    container_name: library-mock-api
+    ports:
+      - "4010:4010"
+    volumes:
+      - ./openapi.yaml:/tmp/openapi.yaml:ro
+    command: >
+      mock 
+      -h 0.0.0.0 
+      -p 4010 
+      /tmp/openapi.yaml
+    environment:
+      - PRISM_LOG_LEVEL=info
+    networks:
+      - mock-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4010/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+networks:
+  mock-network:
+    driver: bridge

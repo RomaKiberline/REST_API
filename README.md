@@ -1,60 +1,64 @@
-﻿# Library API - FastAPI + JWT + Rate Limiter
+# Library Mock API - Lab 8
 
 ## Опис
 
-API для управління бібліотекою книг з JWT автентифікацією та Rate Limiter на основі Redis.
+Mock API для бібліотеки книг з використанням Stoplight Prism.
+
+## Вимоги лабораторної
+
+- Stoplight Prism framework для HTTP mocking
+- OpenAPI специфікація
+- Docker Compose з командою для запуску mock сервісу
 
 ## Функціональність
 
-### Rate Limiting:
-- **Анонімні користувачі:** 2 запити за хвилину
-- **Авторизовані користувачі:** 10 запитів за хвилину
-- **Sliding time window** алгоритм
-
-### API Ендпоінти:
-- POST /token - Логін та отримання токенів
-- GET /books - Отримати книги (авторизовані)
-- POST /books - Створити книгу (авторизовані)
-- GET /health - Перевірка здоров'я (без ліміту)
+### Ендпоінти:
+- `GET /` - Інформація про API
+- `GET /health` - Перевірка здоров'я
+- `POST /token` - Логін та JWT токени
+- `POST /refresh` - Оновлення токена
+- `GET /books` - Список книг (авторизація)
+- `POST /books` - Створення книги (авторизація)
+- `GET /books/{id}` - Книга за ID (авторизація)
+- `GET /users/me` - Профіль користувача (авторизація)
 
 ## Запуск
 
-### Встановлення:
-pip install -r requirements.txt
+### Через Prism CLI:
+```bash
+npx @stoplight/prism-cli mock openapi.yaml -h 0.0.0.0 -p 4010
+```
 
-### Запуск з Redis:
-docker-compose up -d redis
-python main.py
+### Через Docker Compose:
+```bash
+docker-compose up -d
+```
 
-### Запуск без Redis:
-python main.py
-
-## Документація
-
-Swagger UI: http://localhost:8000/docs
+Command для запуску mock сервісу:
+```
+mock -h 0.0.0.0 -p 4010 /tmp/openapi.yaml
+```
 
 ## Тестування
 
-pytest tests/test_rate_limiter.py -v
-pytest tests/test_auth_no_redis.py -v
+```bash
+# Запуск Mock API
+npx @stoplight/prism-cli mock openapi.yaml -h 0.0.0.0 -p 4010
+
+# Тести
+python tests/test_mock_api.py
+```
 
 ## Структура проєкту
 
 ```
 REST_API/
-├── main.py                    # FastAPI додаток
-├── rate_limiter.py            # Rate limiter логіка
-├── redis_config.py            # Redis конфігурація
-├── requirements.txt           # Залежності
-├── docker-compose.yml         # Docker з Redis
-├── Dockerfile                 # Docker контейнер
-├── .env.example               # Змінні середовища
-├── .gitignore                 # Git ігнор файли
-└── tests/                     # Тести
-    ├── test_rate_limiter.py   # Rate limiter тести
-    ├── test_auth_no_redis.py  # JWT тести
-    ├── test_auth.py           # Старі тести JWT
-    └── conftest.py            # Конфігурація тестів
+├── openapi.yaml               # OpenAPI специфікація для API
+├── docker-compose.yaml        # Docker Compose з Prism
+├── tests/
+│   └── test_mock_api.py       # Тестовий скрипт
+├── requirements.txt           # Python залежності
+└── README.md                  # Документація
 ```
 
 ## Тестові користувачі
