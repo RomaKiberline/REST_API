@@ -46,7 +46,14 @@ REST_API/
 ├── redis_config.py            # Redis конфігурація
 ├── requirements.txt           # Залежності
 ├── docker-compose.yml         # Docker з Redis
+├── Dockerfile                 # Docker контейнер
+├── .env.example               # Змінні середовища
+├── .gitignore                 # Git ігнор файли
 └── tests/                     # Тести
+    ├── test_rate_limiter.py   # Rate limiter тести
+    ├── test_auth_no_redis.py  # JWT тести
+    ├── test_auth.py           # Старі тести JWT
+    └── conftest.py            # Конфігурація тестів
 
 ## Тестові користувачі
 
